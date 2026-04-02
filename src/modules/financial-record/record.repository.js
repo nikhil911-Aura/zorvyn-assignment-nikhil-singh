@@ -3,7 +3,7 @@ import prisma from "../../lib/prisma.js";
 const notDeleted = { isDeleted: false };
 
 export const recordRepository = {
-  async findAll({ where = {}, page = 1, limit = 20, orderBy = { date: "desc" } } = {}) {
+  async findAll({ where = {}, page = 1, limit = 20, orderBy = [{ date: "desc" }, { createdAt: "desc" }] } = {}) {
     const skip = (page - 1) * limit;
     const fullWhere = { ...notDeleted, ...where };
     const [records, total] = await Promise.all([

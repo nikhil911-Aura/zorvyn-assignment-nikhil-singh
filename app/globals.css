@@ -21,6 +21,10 @@
   --color-warning-subtle: rgba(245, 158, 11, 0.1);
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text-primary);
@@ -67,6 +71,19 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 6px;
+}
+
+/* Select option styling */
+select option {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 8px;
+}
+
+/* Date input icon color */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
 }
 
 /* Custom scrollbar */

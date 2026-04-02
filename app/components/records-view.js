@@ -31,6 +31,7 @@ export default function RecordsView() {
   const [showModal, setShowModal] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const fetchRecords = useCallback(async (page = 1) => {
     setLoading(true);
@@ -60,6 +61,8 @@ export default function RecordsView() {
     if (!confirm("Delete this record?")) return;
     try {
       await api.delete(`/records/${id}`);
+      setSuccessMsg("Record deleted successfully");
+      setTimeout(() => setSuccessMsg(""), 3000);
       fetchRecords(pagination.page);
     } catch (err) {
       setError(err.message);
@@ -67,13 +70,16 @@ export default function RecordsView() {
   };
 
   const handleSave = async (formData) => {
-    if (editRecord) {
+    const isEdit = !!editRecord;
+    if (isEdit) {
       await api.put(`/records/${editRecord.id}`, formData);
     } else {
       await api.post("/records", formData);
     }
     setShowModal(false);
     setEditRecord(null);
+    setSuccessMsg(isEdit ? "Record updated successfully" : "Record added successfully");
+    setTimeout(() => setSuccessMsg(""), 3000);
     fetchRecords(pagination.page);
   };
 
@@ -98,6 +104,17 @@ export default function RecordsView() {
         <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-5 animate-fade-in">
           {error}
           <button onClick={() => setError("")} className="float-right text-danger/60 hover:text-danger cursor-pointer bg-transparent border-none text-lg leading-none">&times;</button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-success-subtle border border-success/20 rounded-xl px-4 py-3 text-success text-sm mb-5 animate-fade-in">
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {successMsg}
+          </span>
         </div>
       )}
 
@@ -303,40 +320,52 @@ function RecordModal({ record, onClose, onSave }) {
     }
   };
 
-  const inputClass = "w-full px-4 py-2.5 bg-bg-input border border-border rounded-xl text-sm text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted/50";
+  const inputClass = "w-full px-4 py-2.5 bg-bg-input border border-border rounded-xl text-sm text-text-primary outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/30 placeholder:text-text-muted/50";
+  const selectClass = inputClass + " appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2364748b%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4.646%206.646a.5.5%200%2001.708%200L8%209.293l2.646-2.647a.5.5%200%2001.708.708l-3%203a.5.5%200%2001-.708%200l-3-3a.5.5%200%20010-.708z%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_12px_center]";
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in-overlay" onClick={onClose}>
-      <div className="bg-bg-card border border-border rounded-2xl p-5 sm:p-6 w-full max-w-lg animate-slide-up" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-base sm:text-lg font-semibold mb-5">{record ? "Edit Record" : "New Record"}</h2>
+      <div className="bg-bg-card border border-border rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base sm:text-lg font-semibold">{record ? "Edit Record" : "New Record"}</h2>
+          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-input transition-colors cursor-pointer bg-transparent border-none">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         {error && (
           <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-4 animate-fade-in">{error}</div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Amount</label>
-            <input type="number" step="0.01" className={inputClass} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Amount</label>
+              <input type="number" step="0.01" className={inputClass} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Type</label>
+              <select className={selectClass} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                <option value="INCOME">Income</option>
+                <option value="EXPENSE">Expense</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Type</label>
-            <select className={inputClass} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              <option value="INCOME">Income</option>
-              <option value="EXPENSE">Expense</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Category</label>
-            <input className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g., Salary, Rent, Groceries" required />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Date</label>
-            <input type="date" className={inputClass} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Category</label>
+              <input className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g., Salary, Rent" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Date</label>
+              <input type="date" className={inputClass} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1.5">Note (optional)</label>
-            <input className={inputClass} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Optional note" />
+            <input className={inputClass} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Add a note..." />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border mt-2">
             <button type="button" onClick={onClose} className="px-4 py-2.5 border border-border rounded-xl text-sm font-medium text-text-muted hover:bg-bg-input hover:text-text-primary transition-colors cursor-pointer bg-transparent">
               Cancel
             </button>

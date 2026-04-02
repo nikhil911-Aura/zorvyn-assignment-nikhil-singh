@@ -18,6 +18,7 @@ export default function UsersView() {
   const [showModal, setShowModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const fetchUsers = useCallback(async (page = 1) => {
     setLoading(true);
@@ -38,10 +39,16 @@ export default function UsersView() {
     fetchUsers();
   }, [fetchUsers]);
 
+  const showSuccess = (msg) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
   const handleDeactivate = async (id) => {
     if (!confirm("Deactivate this user?")) return;
     try {
       await api.delete(`/users/${id}`);
+      showSuccess("User deactivated successfully");
       fetchUsers(pagination.page);
     } catch (err) {
       setError(err.message);
@@ -51,6 +58,7 @@ export default function UsersView() {
   const handleReactivate = async (id) => {
     try {
       await api.put(`/users/${id}`, { isActive: true });
+      showSuccess("User reactivated successfully");
       fetchUsers(pagination.page);
     } catch (err) {
       setError(err.message);
@@ -58,7 +66,8 @@ export default function UsersView() {
   };
 
   const handleSave = async (formData) => {
-    if (editUser) {
+    const isEdit = !!editUser;
+    if (isEdit) {
       const { password, ...updateData } = formData;
       await api.put(`/users/${editUser.id}`, updateData);
     } else {
@@ -66,6 +75,7 @@ export default function UsersView() {
     }
     setShowModal(false);
     setEditUser(null);
+    showSuccess(isEdit ? "User updated successfully" : "User added successfully");
     fetchUsers(pagination.page);
   };
 
@@ -102,6 +112,17 @@ export default function UsersView() {
         <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-5 animate-fade-in">
           {error}
           <button onClick={() => setError("")} className="float-right text-danger/60 hover:text-danger cursor-pointer bg-transparent border-none text-lg leading-none">&times;</button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-success-subtle border border-success/20 rounded-xl px-4 py-3 text-success text-sm mb-5 animate-fade-in">
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {successMsg}
+          </span>
         </div>
       )}
 
@@ -264,48 +285,58 @@ function UserModal({ user, onClose, onSave }) {
     }
   };
 
-  const inputClass = "w-full px-4 py-2.5 bg-bg-input border border-border rounded-xl text-sm text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted/50";
+  const inputClass = "w-full px-4 py-2.5 bg-bg-input border border-border rounded-xl text-sm text-text-primary outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/30 placeholder:text-text-muted/50";
+  const selectClass = inputClass + " appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2364748b%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4.646%206.646a.5.5%200%2001.708%200L8%209.293l2.646-2.647a.5.5%200%2001.708.708l-3%203a.5.5%200%2001-.708%200l-3-3a.5.5%200%20010-.708z%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_12px_center]";
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in-overlay" onClick={onClose}>
-      <div className="bg-bg-card border border-border rounded-2xl p-5 sm:p-6 w-full max-w-lg animate-slide-up" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-base sm:text-lg font-semibold mb-5">{user ? "Edit User" : "New User"}</h2>
+      <div className="bg-bg-card border border-border rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base sm:text-lg font-semibold">{user ? "Edit User" : "New User"}</h2>
+          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-input transition-colors cursor-pointer bg-transparent border-none">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         {error && (
           <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-4 animate-fade-in">{error}</div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1.5">Name</label>
-            <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted mb-1.5">Email</label>
-            <input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" required />
           </div>
           {!user && (
             <div>
               <label className="block text-xs font-medium text-text-muted mb-1.5">Password</label>
-              <input type="password" className={inputClass} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
+              <input type="password" className={inputClass} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" minLength={6} required />
             </div>
           )}
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Role</label>
-            <select className={inputClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-              <option value="VIEWER">Viewer</option>
-              <option value="ANALYST">Analyst</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
+          <div className={user ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Role</label>
+              <select className={selectClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                <option value="VIEWER">Viewer</option>
+                <option value="ANALYST">Analyst</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
           {user && (
             <div>
               <label className="block text-xs font-medium text-text-muted mb-1.5">Status</label>
-              <select className={inputClass} value={form.isActive ? "true" : "false"} onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}>
+              <select className={selectClass} value={form.isActive ? "true" : "false"} onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}>
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
               </select>
             </div>
           )}
-          <div className="flex justify-end gap-2 pt-2">
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border mt-2">
             <button type="button" onClick={onClose} className="px-4 py-2.5 border border-border rounded-xl text-sm font-medium text-text-muted hover:bg-bg-input hover:text-text-primary transition-colors cursor-pointer bg-transparent">
               Cancel
             </button>
