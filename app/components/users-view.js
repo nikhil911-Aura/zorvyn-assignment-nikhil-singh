@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api-client";
 import { TableLoader, ButtonSpinner } from "./loader";
+import Modal from "./modal";
 
 const ROLE_BADGE = {
   ADMIN: "bg-accent-subtle text-accent",
@@ -289,63 +290,82 @@ function UserModal({ user, onClose, onSave }) {
   const selectClass = inputClass + " appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2364748b%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4.646%206.646a.5.5%200%2001.708%200L8%209.293l2.646-2.647a.5.5%200%2001.708.708l-3%203a.5.5%200%2001-.708%200l-3-3a.5.5%200%20010-.708z%22/%3E%3C/svg%3E')] bg-no-repeat bg-[right_12px_center]";
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in-overlay" onClick={onClose}>
-      <div className="bg-bg-card border border-border rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base sm:text-lg font-semibold">{user ? "Edit User" : "New User"}</h2>
-          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-input transition-colors cursor-pointer bg-transparent border-none">
+    <Modal onClose={onClose}>
+      <div className="bg-bg-card border border-border rounded-2xl w-full max-w-md animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h2 className="text-base font-semibold">{user ? "Edit User" : "New User"}</h2>
+            <p className="text-xs text-text-muted mt-0.5">{user ? "Update user details" : "Add a new team member"}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-input transition-colors cursor-pointer bg-transparent border-none">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        {error && (
-          <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-4 animate-fade-in">{error}</div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Name</label>
-            <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" required />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">Email</label>
-            <input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" required />
-          </div>
-          {!user && (
-            <div>
-              <label className="block text-xs font-medium text-text-muted mb-1.5">Password</label>
-              <input type="password" className={inputClass} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" minLength={6} required />
-            </div>
+
+        {/* Body */}
+        <div className="px-6 py-5">
+          {error && (
+            <div className="bg-danger-subtle border border-danger/20 rounded-xl px-4 py-3 text-danger text-sm mb-4 animate-fade-in">{error}</div>
           )}
-          <div className={user ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1.5">Role</label>
-              <select className={selectClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                <option value="VIEWER">Viewer</option>
-                <option value="ANALYST">Analyst</option>
-                <option value="ADMIN">Admin</option>
-              </select>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Name</label>
+              <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" required />
             </div>
-          {user && (
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1.5">Status</label>
-              <select className={selectClass} value={form.isActive ? "true" : "false"} onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Email</label>
+              <input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" required />
             </div>
-          )}
-          </div>
-          <div className="flex justify-end gap-2 pt-3 border-t border-border mt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2.5 border border-border rounded-xl text-sm font-medium text-text-muted hover:bg-bg-input hover:text-text-primary transition-colors cursor-pointer bg-transparent">
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 cursor-pointer">
-              {saving ? <><ButtonSpinner /> Saving...</> : user ? "Update" : "Create"}
-            </button>
-          </div>
-        </form>
+            {!user && (
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">Password</label>
+                <input type="password" className={inputClass} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" minLength={6} required />
+              </div>
+            )}
+            {user ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">Role</label>
+                  <select className={selectClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                    <option value="VIEWER">Viewer</option>
+                    <option value="ANALYST">Analyst</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-muted mb-1.5">Status</label>
+                  <select className={selectClass} value={form.isActive ? "true" : "false"} onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">Role</label>
+                <select className={selectClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                  <option value="VIEWER">Viewer</option>
+                  <option value="ANALYST">Analyst</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 pt-4 border-t border-border">
+              <button type="button" onClick={onClose} className="px-4 py-2.5 border border-border rounded-xl text-sm font-medium text-text-muted hover:bg-bg-input hover:text-text-primary transition-colors cursor-pointer bg-transparent">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 cursor-pointer">
+                {saving ? <span className="flex items-center gap-2"><ButtonSpinner /> Saving...</span> : user ? "Update" : "Create"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
