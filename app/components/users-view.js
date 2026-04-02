@@ -38,10 +38,19 @@ export default function UsersView() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleDelete = async (id) => {
+  const handleDeactivate = async (id) => {
     if (!confirm("Deactivate this user?")) return;
     try {
       await api.delete(`/users/${id}`);
+      fetchUsers(pagination.page);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleReactivate = async (id) => {
+    try {
+      await api.put(`/users/${id}`, { isActive: true });
       fetchUsers(pagination.page);
     } catch (err) {
       setError(err.message);
@@ -160,15 +169,27 @@ export default function UsersView() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
-                            <button
-                              onClick={() => handleDelete(u.id)}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger-subtle transition-colors cursor-pointer bg-transparent border-none"
-                              title="Deactivate"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                            </button>
+                            {u.isActive ? (
+                              <button
+                                onClick={() => handleDeactivate(u.id)}
+                                className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger-subtle transition-colors cursor-pointer bg-transparent border-none"
+                                title="Deactivate"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivate(u.id)}
+                                className="p-1.5 rounded-lg text-text-muted hover:text-success hover:bg-success-subtle transition-colors cursor-pointer bg-transparent border-none"
+                                title="Reactivate"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
